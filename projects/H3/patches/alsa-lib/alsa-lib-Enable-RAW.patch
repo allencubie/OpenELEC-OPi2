@@ -1,0 +1,54 @@
+diff -Nur a/include/pcm.h b/include/pcm.h
+--- a/include/pcm.h	2016-03-31 15:10:39.000000000 +0200
++++ b/include/pcm.h	2016-05-13 16:25:49.560235823 +0200
+@@ -849,6 +849,7 @@
+ int snd_pcm_hw_params_set_buffer_size_near(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val);
+ int snd_pcm_hw_params_set_buffer_size_first(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val);
+ int snd_pcm_hw_params_set_buffer_size_last(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val);
++int snd_pcm_hw_params_set_raw(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val);
+ 
+ #endif /* !ALSA_LIBRARY_BUILD && !ALSA_PCM_OLD_HW_PARAMS_API */
+ 
+diff -Nur a/include/sound/asound.h b/include/sound/asound.h
+--- a/include/sound/asound.h	2016-03-31 15:10:39.000000000 +0200
++++ b/include/sound/asound.h	2016-05-12 22:58:50.552606684 +0200
+@@ -356,8 +356,9 @@
+ #define	SNDRV_PCM_HW_PARAM_BUFFER_SIZE	17	/* Size of buffer in frames */
+ #define	SNDRV_PCM_HW_PARAM_BUFFER_BYTES	18	/* Size of buffer in bytes */
+ #define	SNDRV_PCM_HW_PARAM_TICK_TIME	19	/* Approx tick duration in us */
++#define SNDRV_PCM_HW_PARAM_RAW_FLAG	 20
+ #define	SNDRV_PCM_HW_PARAM_FIRST_INTERVAL	SNDRV_PCM_HW_PARAM_SAMPLE_BITS
+-#define	SNDRV_PCM_HW_PARAM_LAST_INTERVAL	SNDRV_PCM_HW_PARAM_TICK_TIME
++#define	SNDRV_PCM_HW_PARAM_LAST_INTERVAL	SNDRV_PCM_HW_PARAM_RAW_FLAG
+ 
+ #define SNDRV_PCM_HW_PARAMS_NORESAMPLE	(1<<0)	/* avoid rate resampling */
+ #define SNDRV_PCM_HW_PARAMS_EXPORT_BUFFER	(1<<1)	/* export buffer */
+@@ -392,6 +393,7 @@
+ 	unsigned int rate_num;		/* R: rate numerator */
+ 	unsigned int rate_den;		/* R: rate denominator */
+ 	snd_pcm_uframes_t fifo_size;	/* R: chip FIFO size in frames */
++	unsigned int raw_flag;
+ 	unsigned char reserved[64];	/* reserved for future */
+ };
+ 
+diff -Nur a/src/pcm/pcm.c b/src/pcm/pcm.c
+--- a/src/pcm/pcm.c	2016-03-31 15:10:39.000000000 +0200
++++ b/src/pcm/pcm.c	2016-05-13 16:25:12.066900607 +0200
+@@ -5416,6 +5416,17 @@
+ 	return err;
+ }
+ 
++/**
++ * \brief Select RAW format
++ * \param pcm PCM handle
++ * \param params Configuration space
++ * \param val RAW format (1 - PCM, 11 - DTS HD/Dolby Digital Plus, 2 - everything else
++ * \return 0 otherwise a negative error code if configuration space would become empty
++ */
++int snd_pcm_hw_params_set_raw(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val)
++{
++	return snd_pcm_hw_param_set(pcm, params, SND_CHANGE, SNDRV_PCM_HW_PARAM_RAW_FLAG, val, 0);
++}
+ 
+ /**
+  * \brief (DEPRECATED) Extract tick time from a configuration space

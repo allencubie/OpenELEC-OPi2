@@ -1,0 +1,20 @@
+diff -Nur a/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c raw/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c
+--- a/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c	2016-04-24 18:52:22.000000000 +0200
++++ raw/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c	2016-05-12 19:37:16.885332771 +0200
+@@ -232,15 +232,13 @@
+ 			slave_config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+ 		}
+ 		/*raw_flag>1. rawdata*/
++		strcpy(substream->pcm->card->id, "sndhdmi");
+ 		if (raw_flag > 1) {
+ 			slave_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+ 			slave_config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+-			 strcpy(substream->pcm->card->id, "sndhdmiraw");
+ 			 hdmiraw_dma_area = dma_alloc_coherent(NULL, (2*params_buffer_bytes(params)), &hdmiraw_dma_addr, GFP_KERNEL);
+ 			 hdmipcm_dma_addr = substream->dma_buffer.addr;
+ 			 substream->dma_buffer.addr = hdmiraw_dma_addr;
+-		} else {
+-			strcpy(substream->pcm->card->id, "sndhdmi");
+ 		}
+ 		#ifdef CONFIG_ARCH_SUN9I
+ 		slave_config.slave_id = sunxi_slave_id(DRQDST_DAUDIO_1_TX, DRQSRC_SDRAM);
