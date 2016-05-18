@@ -11,12 +11,12 @@ diff -Nur a/include/pcm.h b/include/pcm.h
  
 diff -Nur a/include/sound/asound.h b/include/sound/asound.h
 --- a/include/sound/asound.h	2016-03-31 15:10:39.000000000 +0200
-+++ b/include/sound/asound.h	2016-05-12 22:58:50.552606684 +0200
++++ b/include/sound/asound.h	2016-05-18 23:29:05.179819653 +0200
 @@ -356,8 +356,9 @@
  #define	SNDRV_PCM_HW_PARAM_BUFFER_SIZE	17	/* Size of buffer in frames */
  #define	SNDRV_PCM_HW_PARAM_BUFFER_BYTES	18	/* Size of buffer in bytes */
  #define	SNDRV_PCM_HW_PARAM_TICK_TIME	19	/* Approx tick duration in us */
-+#define SNDRV_PCM_HW_PARAM_RAW_FLAG	 20
++#define SNDRV_PCM_HW_PARAM_RAW_FLAG	20
  #define	SNDRV_PCM_HW_PARAM_FIRST_INTERVAL	SNDRV_PCM_HW_PARAM_SAMPLE_BITS
 -#define	SNDRV_PCM_HW_PARAM_LAST_INTERVAL	SNDRV_PCM_HW_PARAM_TICK_TIME
 +#define	SNDRV_PCM_HW_PARAM_LAST_INTERVAL	SNDRV_PCM_HW_PARAM_RAW_FLAG
@@ -33,8 +33,8 @@ diff -Nur a/include/sound/asound.h b/include/sound/asound.h
  
 diff -Nur a/src/pcm/pcm.c b/src/pcm/pcm.c
 --- a/src/pcm/pcm.c	2016-03-31 15:10:39.000000000 +0200
-+++ b/src/pcm/pcm.c	2016-05-13 16:25:12.066900607 +0200
-@@ -5416,6 +5416,17 @@
++++ b/src/pcm/pcm.c	2016-05-19 00:05:28.689759091 +0200
+@@ -5416,6 +5416,21 @@
  	return err;
  }
  
@@ -47,8 +47,31 @@ diff -Nur a/src/pcm/pcm.c b/src/pcm/pcm.c
 + */
 +int snd_pcm_hw_params_set_raw(snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val)
 +{
-+	return snd_pcm_hw_param_set(pcm, params, SND_CHANGE, SNDRV_PCM_HW_PARAM_RAW_FLAG, val, 0);
++	struct snd_interval *i = &params->intervals[SND_PCM_HW_PARAM_RAW_FLAG - SND_PCM_HW_PARAM_FIRST_INTERVAL];
++	i->min = val;
++	i->max = val;
++	i->integer = 1;
++	return 0;
 +}
  
  /**
   * \brief (DEPRECATED) Extract tick time from a configuration space
+diff -Nur a/src/pcm/pcm_local.h b/src/pcm/pcm_local.h
+--- a/src/pcm/pcm_local.h	2016-03-31 15:10:39.000000000 +0200
++++ b/src/pcm/pcm_local.h	2016-05-18 23:33:42.359811966 +0200
+@@ -58,6 +58,7 @@
+ #define SND_PCM_HW_PARAM_BUFFER_SIZE SNDRV_PCM_HW_PARAM_BUFFER_SIZE
+ #define SND_PCM_HW_PARAM_BUFFER_BYTES SNDRV_PCM_HW_PARAM_BUFFER_BYTES
+ #define SND_PCM_HW_PARAM_TICK_TIME SNDRV_PCM_HW_PARAM_TICK_TIME
++#define SND_PCM_HW_PARAM_RAW_FLAG SNDRV_PCM_HW_PARAM_RAW_FLAG
+ #define SND_PCM_HW_PARAM_LAST_INTERVAL SNDRV_PCM_HW_PARAM_LAST_INTERVAL
+ #define SND_PCM_HW_PARAM_LAST_MASK SNDRV_PCM_HW_PARAM_LAST_MASK
+ #define SND_PCM_HW_PARAM_FIRST_MASK SNDRV_PCM_HW_PARAM_FIRST_MASK
+@@ -906,6 +907,7 @@
+ #define SND_PCM_HW_PARBIT_PERIOD_BYTES	(1U << SND_PCM_HW_PARAM_PERIOD_BYTES)
+ #define SND_PCM_HW_PARBIT_BUFFER_BYTES	(1U << SND_PCM_HW_PARAM_BUFFER_BYTES)
+ #define SND_PCM_HW_PARBIT_TICK_TIME	(1U << SND_PCM_HW_PARAM_TICK_TIME)
++#define SND_PCM_HW_PARBIT_RAW_FLAG	(1U << SND_PCM_HW_PARAM_RAW_FLAG)
+ 
+ 
+ #define SND_PCM_ACCBIT_MMAP { ((1U << SND_PCM_ACCESS_MMAP_INTERLEAVED) | \

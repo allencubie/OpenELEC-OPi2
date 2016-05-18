@@ -1,19 +1,44 @@
 diff -Nur a/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp pass/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp
 --- a/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp	2016-04-15 18:52:10.000000000 +0200
-+++ pass/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp	2016-05-13 16:27:28.810240807 +0200
-@@ -683,6 +683,15 @@
-     fmt = SND_PCM_FORMAT_FLOAT;
-     outconfig.format = AE_FMT_FLOAT;
++++ pass/xbmc/cores/AudioEngine/Sinks/AESinkALSA.cpp	2016-05-19 00:43:13.523029606 +0200
+@@ -516,7 +516,9 @@
+   /* if we are raw, correct the data format */
+   if (AE_IS_RAW(format.m_dataFormat))
+   {
++#if !defined(HAS_CEDARX)
+     inconfig.format   = AE_FMT_S16NE;
++#endif
+     m_passthrough     = true;
    }
+   else
+@@ -673,9 +675,28 @@
+ 
+   /* update outconfig */
+   outconfig.channels = channelCount;
 +  
++  AEDataFormat aeformat = inconfig.format;
 +#if defined(HAS_CEDARX)
-+  if (!AE_IS_RAW(inconfig.format))
-+    snd_pcm_hw_params_set_raw(m_pcm, hw_params, 1); /* PCM */
-+  else if (inconfig.format == AE_FMT_DTSHD)
-+    snd_pcm_hw_params_set_raw(m_pcm, hw_params, 11); /* DTS_HD or DDP */
-+  else
-+    snd_pcm_hw_params_set_raw(m_pcm, hw_params, 2); /* AC3 but doesn't matter because driver combines everything which is not PCM, DTS_HD or DDP */  
++  {
++    unsigned int type = 1; /* PCM is default */
++    
++    if(m_passthrough)
++    {
++      if (inconfig.format == AE_FMT_DTSHD)
++	type = 11; /* DTS_HD or DDP */
++      else
++	type = 2; /* AC3 but doesn't matter because driver combines everything which is not PCM, DTS_HD or DDP */
++      aeformat = AE_FMT_S16NE;
++    }
++    
++    snd_pcm_hw_params_set_raw(m_pcm, hw_params, type);
++    CLog::Log(LOGINFO, "CAESinkALSA::InitializeHW - Passthrough type: %u, format: %d", type, inconfig.format);
++  }
 +#endif
  
-   /* try the data format */
-   if (snd_pcm_hw_params_set_format(m_pcm, hw_params, fmt) < 0)
+-  snd_pcm_format_t fmt = AEFormatToALSAFormat(inconfig.format);
+-  outconfig.format = inconfig.format;
++  snd_pcm_format_t fmt = AEFormatToALSAFormat(aeformat);
++  outconfig.format = aeformat;
+ 
+   if (fmt == SND_PCM_FORMAT_UNKNOWN)
+   {
