@@ -1,20 +1,104 @@
-diff -Nur a/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c raw/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c
+diff -Nur a/sound/soc/sunxi/hdmiaudio/sndhdmi.c raw2/sound/soc/sunxi/hdmiaudio/sndhdmi.c
+--- a/sound/soc/sunxi/hdmiaudio/sndhdmi.c	2016-04-24 18:52:22.000000000 +0200
++++ raw2/sound/soc/sunxi/hdmiaudio/sndhdmi.c	2016-05-19 21:21:27.173322456 +0200
+@@ -111,9 +111,7 @@
+ 		DST = 13,
+ 		WMAPRO = 14. 
+ 	*/
+-	if (hdmi_para.data_raw > 1) {
+-		hdmi_para.sample_bit = 24; //??? TODO
+-	}
++
+ 	if (hdmi_para.channel_num == 8) {
+ 		hdmi_para.ca = 0x12;
+ 	} else if ((hdmi_para.channel_num >= 3)) {
+diff -Nur a/sound/soc/sunxi/hdmiaudio/sunxi-hdmiaudio.c raw2/sound/soc/sunxi/hdmiaudio/sunxi-hdmiaudio.c
+--- a/sound/soc/sunxi/hdmiaudio/sunxi-hdmiaudio.c	2016-04-12 12:21:19.000000000 +0200
++++ raw2/sound/soc/sunxi/hdmiaudio/sunxi-hdmiaudio.c	2016-05-19 21:20:55.133323344 +0200
+@@ -259,9 +259,7 @@
+ 	default:
+ 		return -EINVAL;
+ 	}
+-	if (raw_flag > 1) {
+-		sample_resolution = 24;
+-	}
++
+ 	if (!substream) {
+ 		pr_err("error:%s,line:%d\n", __func__, __LINE__);
+ 		return -EAGAIN;
+diff -Nur a/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c raw2/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c
 --- a/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c	2016-04-24 18:52:22.000000000 +0200
-+++ raw/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c	2016-05-12 19:37:16.885332771 +0200
-@@ -232,15 +232,13 @@
++++ raw2/sound/soc/sunxi/hdmiaudio/sunxi-hdmipcm.c	2016-05-20 15:58:59.262740292 +0200
+@@ -37,9 +37,9 @@
+ atomic_t card_open_num;
+ 
+ static int raw_flag = 1;
+-static dma_addr_t hdmiraw_dma_addr = 0;
+-static dma_addr_t hdmipcm_dma_addr = 0;
+-static unsigned char *hdmiraw_dma_area;	/* DMA area */
++//static dma_addr_t hdmiraw_dma_addr = 0;
++//static dma_addr_t hdmipcm_dma_addr = 0;
++//static unsigned char *hdmiraw_dma_area;	/* DMA area */
+ static unsigned int channel_status[192];
+ 
+ #ifdef AUDIO_KARAOKE
+@@ -232,16 +232,12 @@
  			slave_config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
  		}
  		/*raw_flag>1. rawdata*/
-+		strcpy(substream->pcm->card->id, "sndhdmi");
- 		if (raw_flag > 1) {
- 			slave_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
- 			slave_config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+-		if (raw_flag > 1) {
+-			slave_config.dst_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
+-			slave_config.src_addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
 -			 strcpy(substream->pcm->card->id, "sndhdmiraw");
++		strcpy(substream->pcm->card->id, "sndhdmi");
++		/*if (raw_flag > 1) {
  			 hdmiraw_dma_area = dma_alloc_coherent(NULL, (2*params_buffer_bytes(params)), &hdmiraw_dma_addr, GFP_KERNEL);
  			 hdmipcm_dma_addr = substream->dma_buffer.addr;
  			 substream->dma_buffer.addr = hdmiraw_dma_addr;
 -		} else {
 -			strcpy(substream->pcm->card->id, "sndhdmi");
- 		}
+-		}
++		}*/
  		#ifdef CONFIG_ARCH_SUN9I
  		slave_config.slave_id = sunxi_slave_id(DRQDST_DAUDIO_1_TX, DRQSRC_SDRAM);
+ 		#endif
+@@ -283,11 +279,11 @@
+ 
+ static int sunxi_pcm_hw_free(struct snd_pcm_substream *substream)
+ {
+-	if (snd_pcm_lib_buffer_bytes(substream)&& (raw_flag > 1)) {
++	/*if (snd_pcm_lib_buffer_bytes(substream)&& (raw_flag > 1)) {
+ 		dma_free_coherent(NULL, (2*snd_pcm_lib_buffer_bytes(substream)),
+ 					      hdmiraw_dma_area, hdmiraw_dma_addr);
+ 		substream->dma_buffer.addr = hdmipcm_dma_addr;
+-	}
++	}*/
+ 
+ 	snd_pcm_set_runtime_buffer(substream, NULL);
+   
+@@ -400,10 +396,10 @@
+ 		if (copy_from_user(hwbuf, buf, frames_to_bytes(runtime, frames))) {
+ 			return -EFAULT;
+ 		}
+-		if (raw_flag > 1) {
++		/*if (raw_flag > 1) {
+ 			char* hdmihw_area = hdmiraw_dma_area + 2*frames_to_bytes(runtime, hwoff);
+ 			hdmi_transfer_format_61937_to_60958((int*)hdmihw_area, (short*)hwbuf, frames_to_bytes(runtime, frames));
+-		}
++		}*/
+ #ifdef AUDIO_KARAOKE
+ 		do_gettimeofday(&tv_cur);
+ 		/*mixer capture buffer to the play output buffer*/
+diff -Nur a/sound/soc/sunxi/hdmiaudio/sunxi-hdmitdm.c raw2/sound/soc/sunxi/hdmiaudio/sunxi-hdmitdm.c
+--- a/sound/soc/sunxi/hdmiaudio/sunxi-hdmitdm.c	2016-04-24 18:52:22.000000000 +0200
++++ raw2/sound/soc/sunxi/hdmiaudio/sunxi-hdmitdm.c	2016-05-19 21:22:18.503321032 +0200
+@@ -532,9 +532,6 @@
+ 		default:
+ 			return -EINVAL;
+ 	}
+-	if (raw_flag > 1) {
+-		sample_resolution = 24;
+-	}
+ 
+ 	tdm2_hw_params(sample_resolution);
+ 	/* play or record */
